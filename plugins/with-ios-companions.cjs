@@ -8,7 +8,7 @@ module.exports=(config,{carPlay=false,watch=false}={})=>{
         UIApplicationSupportsMultipleScenes:true,
         UISceneConfigurations:{CPTemplateApplicationSceneSessionRoleApplication:[{
           UISceneClassName:'CPTemplateApplicationScene',UISceneConfigurationName:'MyMap CarPlay',
-          UISceneDelegateClassName:'MyMapIOS.MyMapCarPlaySceneDelegate',
+          UISceneDelegateClassName:'MyMapCarPlaySceneDelegate',
         }]},
       };return c;
     });

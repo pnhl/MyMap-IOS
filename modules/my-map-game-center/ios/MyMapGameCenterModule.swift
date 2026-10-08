@@ -21,6 +21,9 @@ public final class MyMapGameCenterModule: Module {
       self.pendingPromise = promise
       self.authenticateLocalPlayer()
     }.runOnQueue(.main)
+    OnDestroy {
+      DispatchQueue.main.async { self.reject("ERR_GAME_CENTER_CANCELLED", "Yêu cầu đăng nhập đã kết thúc.") }
+    }
   }
 
   private func authenticateLocalPlayer() {

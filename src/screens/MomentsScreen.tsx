@@ -9,7 +9,7 @@ import {Text} from '../ui/Text';
 import {LinearGradient} from 'expo-linear-gradient';
 import {useAppTheme} from '../ui/theme';
 import {useResponsiveLayout} from '../ui/glass';
-import {momentWidgetSupported,listLocalMoments,listSharedMoments,listMomentGroups,createMomentGroup,leaveMomentGroup,exportMomentRecap,shareMomentFile,configureMomentWidget,syncMomentQueue,subscribeMomentChanges,listUnclaimedMoments,claimUnclaimedMoments,listMomentRecaps,type MomentRecap,type Moment,type MomentGroup,type WidgetFilter} from '../services/moments';
+import {momentWidgetSupported,disableMomentWidget,listLocalMoments,listSharedMoments,listMomentGroups,createMomentGroup,leaveMomentGroup,exportMomentRecap,shareMomentFile,configureMomentWidget,syncMomentQueue,subscribeMomentChanges,listUnclaimedMoments,claimUnclaimedMoments,listMomentRecaps,type MomentRecap,type Moment,type MomentGroup,type WidgetFilter} from '../services/moments';
 import {sameLocalDate} from '../services/momentPolicy';
 import {listConnections,type FriendConnection} from '../services/friendDiscovery';
 import {pauseMusicPlayback} from '../services/musicPlayback';
@@ -80,7 +80,7 @@ export default function MomentsScreen(){
     {(['friends','personal','anniversary'] as const).map(mode=><Pressable key={mode} style={s.member} onPress={()=>setWidgetMode(mode)}><Text style={s.buttonText}>{mode==='friends'?'Ảnh mới từ bạn bè':mode==='personal'?'Khoảnh khắc gần nhất của tôi':'Ngày này năm xưa'}</Text><MaterialCommunityIcons name={mode===widgetMode?'radiobox-marked':'radiobox-blank'} size={24} color="#64DBCF"/></Pressable>)}
     {widgetMode==='friends'&&<><Text style={s.muted}>Chọn một người bạn hoặc nhóm; bỏ chọn để xem tất cả.</Text>{friends.map(f=><Pressable key={f.user_id} style={s.member} onPress={()=>{setWidgetAuthor(widgetAuthor===f.user_id?undefined:f.user_id);setWidgetGroup(undefined);}}><Text style={s.buttonText}>{f.display_name}</Text><MaterialCommunityIcons name={widgetAuthor===f.user_id?'checkbox-marked':'checkbox-blank-outline'} size={24} color="#64DBCF"/></Pressable>)}{groups.map(g=><Pressable key={g.id} style={s.member} onPress={()=>{setWidgetGroup(widgetGroup===g.id?undefined:g.id);setWidgetAuthor(undefined);}}><Text style={s.buttonText}>{g.name}</Text><MaterialCommunityIcons name={widgetGroup===g.id?'checkbox-marked':'checkbox-blank-outline'} size={24} color="#64DBCF"/></Pressable>)}</>}
     <Text style={s.muted}>Widget cập nhật khi mở MyMap. Ảnh bạn bè tự ẩn sau 15 phút nếu chưa được cập nhật. Bạn phải tự thêm widget từ màn hình chính iOS.</Text>{button('Thêm widget màn hình chính',()=>void action(async()=>{const result=await configureMomentWidget({mode:widgetMode,author:widgetAuthor,group:widgetGroup});if(!result)Alert.alert('Thêm widget','Nhấn giữ màn hình chính → Sửa → Thêm tiện ích → MyMap.');setModal(null);}),true)}
-   </>}{button('Đóng',()=>setModal(null))}{error&&<Text style={s.error}>{error}</Text>}
+   </>}{modal==='widget'&&button('Tắt widget và xóa ảnh chia sẻ',()=>void action(async()=>{await disableMomentWidget();setModal(null);} ))}{button('Đóng',()=>setModal(null))}{error&&<Text style={s.error}>{error}</Text>}
   </ScrollView></View></View></Modal>
  </ScreenScaffold>;
 }

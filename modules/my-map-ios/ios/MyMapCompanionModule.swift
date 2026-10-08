@@ -2,14 +2,29 @@ import ExpoModulesCore
 import UIKit
 import WatchConnectivity
 import UserNotifications
+import CoreLocation
 
-final class MyMapCompanionStore: NSObject, WCSessionDelegate {
+final class MyMapCompanionStore: NSObject, WCSessionDelegate, CLLocationManagerDelegate {
   static let shared = MyMapCompanionStore()
   var onSOS: (() -> Void)?
   var onStop: (() -> Void)?
   var state: [String: Any] = [:]
   var watchEnabled = false
   var carEnabled = false
+  var carConnected = false { didSet { reconcileLocation() } }
+  private let location = CLLocationManager()
+  private var nextStep = 0
+  private var routeVersion: Double = -1
+  override init() { super.init(); location.delegate = self }
+  private func reconcileLocation() {
+    guard carConnected, carEnabled, state["active"] as? Bool == true,
+      location.authorizationStatus == .authorizedAlways || location.authorizationStatus == .authorizedWhenInUse else {
+      location.stopUpdatingLocation(); return
+    }
+    location.desiredAccuracy = kCLLocationAccuracyBestForNavigation
+    location.distanceFilter = 5; location.allowsBackgroundLocationUpdates = true
+    location.showsBackgroundLocationIndicator = true; location.startUpdatingLocation()
+  }
   func configure(watch: Bool, car: Bool) {
     watchEnabled = watch; carEnabled = car
     if WCSession.isSupported() {
@@ -18,6 +33,7 @@ final class MyMapCompanionStore: NSObject, WCSessionDelegate {
       if session.activationState == .activated { publishWatch() } else if watch { session.activate() }
     }
     if !car { state = [:] }
+    reconcileLocation()
     NotificationCenter.default.post(name: .myMapNavigationChanged, object: nil)
   }
   func update(_ json: String) throws {
@@ -25,9 +41,36 @@ final class MyMapCompanionStore: NSObject, WCSessionDelegate {
     guard json.utf8.count < 512000, let data = json.data(using: .utf8),
       let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
     state = value
+    if let version = value["routeVersion"] as? Double, version != routeVersion {
+      routeVersion = version
+      let steps = value["steps"] as? [[String: Any]] ?? []
+      let current = (value["guidance"] as? [String: Any])?["instruction"] as? String
+      nextStep = steps.firstIndex { $0["instruction"] as? String == current } ?? 0
+    }
+    reconcileLocation()
     publishWatch()
     NotificationCenter.default.post(name: .myMapNavigationChanged, object: nil)
   }
+  func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
+    guard carEnabled, carConnected, state["active"] as? Bool == true, let fix = locations.last,
+      fix.horizontalAccuracy >= 0, fix.horizontalAccuracy < 100, abs(fix.timestamp.timeIntervalSinceNow) < 15 else { return }
+    state["position"] = ["latitude":fix.coordinate.latitude,"longitude":fix.coordinate.longitude]
+    state["speed"] = max(0, fix.speed*3.6); state["updatedAt"] = Date().timeIntervalSince1970*1000
+    if UIApplication.shared.applicationState != .active, let steps = state["steps"] as? [[String: Any]], !steps.isEmpty {
+      func distance(_ step: [String: Any]) -> Double? {
+        guard let point = step["position"] as? [Double], point.count >= 2 else { return nil }
+        return fix.distance(from:CLLocation(latitude:point[0],longitude:point[1]))
+      }
+      while nextStep < steps.count-1, let d = distance(steps[nextStep]), d < 25 { nextStep += 1 }
+      if nextStep < steps.count, let d = distance(steps[nextStep]) {
+        var guidance = steps[nextStep]; guidance["distanceMeters"] = d
+        state["guidance"] = guidance
+      }
+    }
+    publishWatch(); NotificationCenter.default.post(name:.myMapNavigationChanged,object:nil)
+  }
+  func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) { reconcileLocation() }
+  func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) { location.stopUpdatingLocation() }
   private func publishWatch() {
     guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
     let guidance = state["guidance"] as? [String: Any] ?? [:]

@@ -13,11 +13,14 @@ public final class MyMapCarPlaySceneDelegate: NSObject, CPTemplateApplicationSce
   private var destinationKey = ""
   private var observer: NSObjectProtocol?
   private var routeVersion: Double = 0
+  private var refreshTimer: Timer?
   public func templateApplicationScene(_ scene: CPTemplateApplicationScene, didConnect interfaceController: CPInterfaceController, to window: CPWindow) {
     self.controller = interfaceController; self.window = window
+    MyMapCompanionStore.shared.carConnected = true
     let viewController = UIViewController(), map = MKMapView(frame: window.bounds)
     map.autoresizingMask = [.flexibleWidth,.flexibleHeight]
     viewController.view = map; window.rootViewController = viewController; self.map = map
+    map.showsUserLocation = true; map.showsTraffic = true
     let template = CPMapTemplate(); self.template = template
     let center = CPMapButton { [weak self] _ in self?.render() }
     center.image = UIImage(systemName:"location.fill")
@@ -26,10 +29,12 @@ public final class MyMapCarPlaySceneDelegate: NSObject, CPTemplateApplicationSce
     template.mapButtons = [center, stop]
     interfaceController.setRootTemplate(template, animated:false, completion:nil)
     observer = NotificationCenter.default.addObserver(forName:.myMapNavigationChanged,object:nil,queue:.main) { [weak self] _ in self?.render() }
+    refreshTimer = Timer.scheduledTimer(withTimeInterval:5,repeats:true) { [weak self] _ in self?.render() }
     render()
   }
   public func templateApplicationScene(_ scene: CPTemplateApplicationScene, didDisconnect interfaceController: CPInterfaceController, from window: CPWindow) {
     if let observer { NotificationCenter.default.removeObserver(observer) }; observer = nil
+    refreshTimer?.invalidate(); refreshTimer = nil; MyMapCompanionStore.shared.carConnected = false
     session?.finishTrip(); session = nil; map = nil; self.window = nil; controller = nil; template = nil
     destinationKey = ""; routeVersion = 0
   }

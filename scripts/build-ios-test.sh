@@ -6,7 +6,7 @@ sdk="${1:-iphoneos}"
 case "$sdk" in iphoneos) destination='generic/platform=iOS';; iphonesimulator) destination='generic/platform=iOS Simulator';; *) exit 2;; esac
 xcodebuild -version
 xcodebuild -workspace ios/MyMap.xcworkspace -scheme MyMap -configuration Release \
-  -sdk "$sdk" -destination "$destination" -derivedDataPath "build/$sdk" \
+  -destination "$destination" -derivedDataPath "build/$sdk" \
   CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build > "build/$sdk.log" 2>&1 || {
     tail -180 "build/$sdk.log"; exit 1;
   }

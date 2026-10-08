@@ -10,6 +10,10 @@ on:
         description: Also build and smoke test iOS Simulator
         type: boolean
         default: true
+      companions:
+        description: Include WidgetKit and Apple Watch (paid Apple provisioning required for installation)
+        type: boolean
+        default: false
 permissions:
   contents: read
 jobs:
@@ -20,6 +24,8 @@ jobs:
       FIREBASE_IOS_PLIST_BASE64: ${{ secrets.FIREBASE_IOS_PLIST_BASE64 }}
       MYMAP_IOS_ENV: ${{ secrets.MYMAP_IOS_ENV }}
       EXPO_PUBLIC_ENABLE_IOS_WIDGET: ${{ inputs.widgets && 'true' || 'false' }}
+      MYMAP_ENABLE_WATCH: ${{ inputs.companions && 'true' || 'false' }}
+      MYMAP_ENABLE_CARPLAY: 'false'
       RNLLAMA_SKIP_DOWNLOAD: '1'
     steps:
       - uses: actions/checkout@v4
@@ -53,4 +59,33 @@ jobs:
         with:
           name: iOS-build-diagnostics-${{ github.run_number }}
           path: build/*.log
+          retention-days: 7
+  watch-validation:
+    runs-on: macos-latest
+    timeout-minutes: 30
+    env:
+      FIREBASE_IOS_PLIST_BASE64: ${{ secrets.FIREBASE_IOS_PLIST_BASE64 }}
+      MYMAP_ENABLE_WATCH: 'true'
+      MYMAP_ENABLE_CARPLAY: 'true'
+      EXPO_PUBLIC_ENABLE_IOS_WIDGET: 'true'
+      RNLLAMA_SKIP_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: |
+          printf '%s' "$FIREBASE_IOS_PLIST_BASE64" | base64 --decode > GoogleService-Info.plist
+          npm ci --ignore-scripts
+          npx expo prebuild --platform ios --no-install
+          xcodebuild -project ios/MyMap.xcodeproj -target MyMapWatch -configuration Release \
+            -sdk watchsimulator SYMROOT="$PWD/build/watch" CODE_SIGNING_ALLOWED=NO > watch-build.log 2>&1 || { tail -120 watch-build.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: MyMap-Watch-validation-${{ github.run_number }}
+          path: |
+            watch-build.log
+            build/watch/Release-watchsimulator/MyMapWatch.app
           retention-days: 7
