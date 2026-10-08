@@ -35,7 +35,7 @@ export function startIOSCompanions(onSOS:()=>void){
  const sos=native?.addListener('onWatchSOS',()=>{if(AppState.currentState==='active'&&extensionSnapshot().iosWatch)onSOS();});
  const stop=native?.addListener('onCarStop',()=>DeviceEventEmitter.emit('carStopNavigation'));
  const notification=Notifications.addNotificationResponseReceivedListener(response=>{
-  if(response.notification.request.content.data?.url==='mymap://sos'&&extensionSnapshot().iosWatch)onSOS();
+  if(response.notification.request.content.data?.url==='mymap://sos'&&extensionSnapshot().iosWatch){onSOS();void Notifications.clearLastNotificationResponseAsync();}
  });
  void Notifications.getLastNotificationResponseAsync().then(response=>{
   if(active&&response?.notification.request.content.data?.url==='mymap://sos'&&extensionSnapshot().iosWatch){onSOS();void Notifications.clearLastNotificationResponseAsync();}

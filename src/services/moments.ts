@@ -102,6 +102,7 @@ export async function exportMomentRecap(items:Moment[]){
  if(a!==await account())throw new Error('Tài khoản đã thay đổi. Video vẫn được lưu riêng cho tài khoản trước.');return uri;
 }
 export async function shareMomentFile(uri:string){if(!native?.shareFile)throw new Error('Thiết bị chưa hỗ trợ chia sẻ tệp.');await native.shareFile(uri);}
+export async function cancelMomentRecap(){return native?.cancelRecap()??false;}
 export async function configureMomentWidget(filter:WidgetFilter){
  if(!momentWidgetSupported)throw Error('Bản build này chưa bật WidgetKit.');
  const owner=await account();await clearMomentWidget();if(owner!==await account())throw Error('Tài khoản đã thay đổi.');await saveWidgetSelection(owner,filter);await refreshMomentWidget();return false;
@@ -132,7 +133,7 @@ export function startMomentSync(){
   }catch{/* Network failures preserve private drafts and the last valid view. */}finally{watching=false;}
  }
  const refresh=()=>{if(!active||AppState.currentState!=='active')return;void syncMomentQueue().catch(()=>{});void refreshMomentWidget().catch(()=>{});void watch();};
- const auth=subscribeAuthState(()=>{stamp=null;owner=null;void clearMomentWidget(true).catch(()=>{});refresh();});
- const sub=AppState.addEventListener('change',s=>{if(s==='active')refresh();});const timer=setInterval(refresh,60000),poll=setInterval(()=>void watch(),15000);refresh();
+ const auth=subscribeAuthState(()=>{stamp=null;owner=null;void cancelMomentRecap().catch(()=>{});void clearMomentWidget(true).catch(()=>{});refresh();});
+ const sub=AppState.addEventListener('change',s=>{if(s==='active')refresh();else void cancelMomentRecap().catch(()=>{});});const timer=setInterval(refresh,60000),poll=setInterval(()=>void watch(),15000);refresh();
  return()=>{active=false;auth();sub.remove();clearInterval(timer);clearInterval(poll);};
 }

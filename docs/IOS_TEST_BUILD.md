@@ -13,6 +13,7 @@
 | Haptic | Rung thông báo vùng địa điểm khi đồng hồ đang kết nối, tiện ích được bật | Kết nối WatchConnectivity; không báo thành công nếu chưa reachable |
 | CarPlay | Scene native CPMapTemplate + MapKit, tuyến từ provider MyMap, chỉ dẫn, follow/zoom theo tốc độ, nút về giữa/dừng; CoreLocation trong lúc CarPlay kết nối | Cần Apple phê duyệt entitlement navigation CarPlay và provisioning; không bật trong IPA sideload cơ bản |
 | Bảo vệ dữ liệu | Xóa tuyến khi đổi tài khoản; không đồng bộ companion khi tắt; che preview và màn hình đang bị quay khi khóa ứng dụng bật | iOS không chặn mọi screenshot; hệ thống vẫn có giới hạn riêng |
+| Video tổng kết | Nút hủy; hủy khi rời màn hình, đổi tài khoản hoặc xuống nền; native xóa MP4 dở dang và giải phóng writer | Chỉ xuất khi app đang mở; không giữ tác vụ render nền không giới hạn |
 | Apple/Game Center | Chỉ hiện trong build có bật capability; Game Center báo rõ khi bản sideload thiếu quyền | Cần paid provisioning và cấu hình Firebase/Apple |
 
 Giao diện và nghiệp vụ tiếp tục dùng React Native; Swift dành cho WidgetKit/WatchConnectivity/CarPlay/CoreLocation và các API hệ thống. Không thêm Kotlin, Android hoặc Flutter engine vào bản iOS.
