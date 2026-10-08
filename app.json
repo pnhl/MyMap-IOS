@@ -1,0 +1,91 @@
+{
+  "expo": {
+    "name": "MyMap",
+    "slug": "mymap",
+    "version": "1.0.4",
+    "scheme": "mymap",
+    "icon": "./assets/branding/app-icon-v2.png",
+    "backgroundColor": "#061326",
+    "orientation": "default",
+    "userInterfaceStyle": "dark",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.pnhl.vibecoding",
+      "buildNumber": "37",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "location",
+          "audio"
+        ],
+        "NSLocationWhenInUseUsageDescription": "MyMap dùng vị trí để lưu hành trình, hiển thị mức độ đông đúc riêng tư và cung cấp vị trí khi bạn chủ động kích hoạt SOS.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "MyMap cần quyền vị trí nền để lưu lịch sử di chuyển khi ứng dụng không mở."
+      }
+    },
+    "plugins": [
+      "@livekit/react-native-expo-plugin",
+      "@config-plugins/react-native-webrtc",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Cho phép MyMap ghi âm video và lời nhắn giọng nói khi bạn chủ động sử dụng.",
+          "enableBackgroundRecording": false,
+          "enableBackgroundPlayback": true
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Cho phép MyMap theo dõi vị trí để lưu lịch sử di chuyển của bạn.",
+          "isIosBackgroundLocationEnabled": true
+        }
+      ],
+      "expo-sqlite",
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Cho phép MyMap truy cập ảnh để tạo kỷ niệm gắn với địa điểm.",
+          "cameraPermission": "Cho phép MyMap dùng camera để chụp ảnh và ghim lên bản đồ.",
+          "microphonePermission": "Cho phép MyMap ghi âm video và lời nhắn khi bạn chủ động sử dụng."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Cho phép MyMap chụp ảnh, quay video và quét mã QR trong ứng dụng.",
+          "microphonePermission": "Cho phép MyMap ghi âm video và lời nhắn giọng nói khi bạn chủ động sử dụng."
+        }
+      ],
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Cho phép MyMap sử dụng cảm biến chuyển động để phát hiện va chạm hoặc té ngã có thể cần trợ giúp."
+        }
+      ],
+      "expo-notifications",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#061326",
+          "image": "./assets/branding/splash-logo-v2.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "dark": {
+            "backgroundColor": "#061326",
+            "image": "./assets/branding/splash-logo-v2.png"
+          }
+        }
+      ],
+      [
+        "expo-video",
+        {
+          "supportsBackgroundPlayback": false,
+          "supportsPictureInPicture": false
+        }
+      ]
+    ],
+    "platforms": [
+      "ios"
+    ]
+  }
+}

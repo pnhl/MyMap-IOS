@@ -1,0 +1,18 @@
+{
+  "$schema": "../../../node_modules/wrangler/config-schema.json",
+  "name": "mymap-geo-gateway",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-09-21",
+  "workers_dev": true,
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 0.1
+  },
+  "vars": {
+    "ALLOWED_ORIGINS": "*",
+    "ROUTING_PROVIDERS": "osrm,valhalla,graphhopper",
+    "OSRM_URL": "https://router.project-osrm.org",
+    "VALHALLA_URL": "https://valhalla.openstreetmap.de",
+    "GRAPHHOPPER_URL": "https://graphhopper.com/api/1"
+  }
+}

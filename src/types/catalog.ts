@@ -1,0 +1,15 @@
+export type CatalogKind='trip'|'collection'|'vehicle'|'parking'|'expense'|'maintenance'|'journal'|'road_report'|'event'|'review'|'emergency_card';
+export type CatalogDocument<T=Record<string,unknown>>={id:string;account:string;kind:CatalogKind;data:T;members:string[];version:number;updatedAt:number;expiresAt:number|null;sync:'local'|'queued'|'synced'|'conflict';error?:string;owned?:boolean};
+export type TripStop={id:string;name:string;latitude:number;longitude:number;stayMinutes:number};
+export type TripPlan={name:string;mode:'motorbike'|'car'|'foot'|'bike';startsAt:number;stops:TripStop[];votes:Record<string,string>;favorite:boolean};
+export type Vehicle={name:string;fuel:'petrol'|'diesel'|'electric';odometerKm:number;consumptionPer100Km:number;unitPrice:number;batteryKwh?:number;reservePercent?:number};
+export type Parking={vehicleId:string;latitude:number;longitude:number;at:number;note:string;photoUri?:string;reminderAt?:number;notificationId?:string};
+export type Expense={tripId:string|null;vehicleId:string|null;category:'fuel'|'charging'|'toll'|'parking'|'other';amount:number;at:number;note:string;splitPeople:number;quantity?:number;odometerKm?:number;fullFill?:boolean};
+export type Maintenance={vehicleId:string;name:string;dueAt:number|null;dueKm:number|null;done:boolean;notificationId?:string};
+export type PlaceCollection={name:string;places:Array<{id:string;name:string;latitude:number;longitude:number;note:string}>};
+export type RoadReport={category:'hazard'|'pothole'|'flood'|'accident'|'closure'|'broken_light';latitude:number;longitude:number;note:string;createdAt:number};
+export type EmergencyCard={name:string;bloodType:string;allergies:string;medications:string;contacts:Array<{name:string;phone:string}>};
+export type CatalogPlace={name:string;latitude:number;longitude:number};
+export type TravelJournal={name:string;note:string;at:number;place:CatalogPlace|null};
+export type MeetupEvent={name:string;note:string;startsAt:number;endsAt:number;place:CatalogPlace};
+export type PlaceReview={name:string;note:string;rating:1|2|3|4|5;visitedAt:number;place:CatalogPlace};
