@@ -13,6 +13,7 @@ export type {Moment,MomentGroup,MomentReply} from '../types/moment';
 const native=requireOptionalNativeModule<{exportRecap(json:string):Promise<string>;cancelRecap():Promise<boolean>;shareFile(uri:string):Promise<boolean>}>('MyMapMoments');
 import {clearMomentWidget,updateMomentWidget,saveWidgetSelection,widgetSelection,momentWidgetSupported,type WidgetFilter} from './momentWidget';
 export {momentWidgetSupported};
+export const disableMomentWidget=()=>clearMomentWidget(true);
 export type {WidgetFilter};
 const bucket=supabase.storage.from('mymap-moments');
 const changeListeners=new Set<()=>void>();
@@ -103,7 +104,7 @@ export async function exportMomentRecap(items:Moment[]){
 export async function shareMomentFile(uri:string){if(!native?.shareFile)throw new Error('Thiết bị chưa hỗ trợ chia sẻ tệp.');await native.shareFile(uri);}
 export async function configureMomentWidget(filter:WidgetFilter){
  if(!momentWidgetSupported)throw Error('Bản build này chưa bật WidgetKit.');
- const owner=await account();await clearMomentWidget();await saveWidgetSelection(owner,filter);await refreshMomentWidget();return false;
+ const owner=await account();await clearMomentWidget();if(owner!==await account())throw Error('Tài khoản đã thay đổi.');await saveWidgetSelection(owner,filter);await refreshMomentWidget();return false;
 }
 export async function refreshMomentWidget(){
  if(!momentWidgetSupported)return;
