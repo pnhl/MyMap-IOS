@@ -9,6 +9,6 @@ Pod::Spec.new do |s|
   s.source = { :git => '' }
   s.static_framework = true
   s.dependency 'ExpoModulesCore'
-  s.frameworks = 'AVFoundation', 'CoreMotion', 'UIKit', 'ImageIO'
+  s.frameworks = 'AVFoundation', 'CoreMotion', 'UIKit', 'ImageIO', 'CarPlay', 'MapKit', 'WatchConnectivity', 'UserNotifications'
   s.source_files = '**/*.swift'
 end

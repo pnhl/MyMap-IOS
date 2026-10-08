@@ -2,6 +2,7 @@ import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 import * as Notifications from 'expo-notifications';
 import { supabase } from './supabase';
+import {companionGeofenceHaptic} from './iosCompanions';
 
 export const GEOFENCE_TASK_NAME = 'mymap-place-geofence-v1';
 
@@ -56,6 +57,7 @@ TaskManager.defineTask(GEOFENCE_TASK_NAME, async ({ data, error }) => {
       },
       trigger: null,
     });
+    await companionGeofenceHaptic(eventType==='enter'?'Đã đến địa điểm':'Đã rời địa điểm').catch(()=>false);
   } catch (e) {
     console.warn('MyMap geofence task failed', e);
   }

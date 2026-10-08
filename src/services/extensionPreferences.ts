@@ -7,7 +7,9 @@ export const EXTENSIONS = {
   offlineTrips: ['Lưu tuyến ngoại tuyến', 'Giữ tuyến đã tính để xem khi mất mạng; cần tính lại khi đổi đường.'],
   voiceSearch: ['Tìm kiếm bằng giọng nói', 'Dùng bộ nhận dạng ngoại tuyến cài trên thiết bị nếu có.'],
   communityTools: ['Tương tác cộng đồng', 'Bình luận, tham gia sự kiện và báo cáo nội dung.'],
-  deviceAi: ['AI trên thiết bị', 'ML Kit/Gemini Nano hoặc mô hình GGUF cục bộ; chỉ xử lý khi bạn yêu cầu.'],
+  deviceAi: ['AI trên thiết bị', 'Apple Intelligence trên thiết bị hỗ trợ hoặc mô hình GGUF cục bộ; chỉ xử lý khi bạn yêu cầu.'],
+  iosWatch: ['Apple Watch', 'Đồng bộ chỉ dẫn, tốc độ và rung vùng an toàn; yêu cầu SOS cần xác nhận trên iPhone. Cần cài ứng dụng đồng hồ.'],
+  carPlay: ['CarPlay', 'Đưa tuyến đang chỉ đường lên màn hình xe; cần bản build có quyền CarPlay của Apple.'],
   airQuality: ['Dự báo chất lượng không khí', 'AQI và nồng độ ô nhiễm từ mô hình Open-Meteo/CAMS; không phải trạm đo.'],
 } as const;
 export type Extension = keyof typeof EXTENSIONS;

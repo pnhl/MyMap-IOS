@@ -1098,8 +1098,11 @@ export default function MapScreen() {
   },[focused,!!destination,liveSpeedKmh,roadSpeedContext?.speedLimitKmh,navigationPreferences]);
   useEffect(()=>{
     const position=navigationPosition||currentPosition||latestPoint;
-    travelNative?.updateCarState(JSON.stringify({active:!!destination,destination:destination?.name,position,coordinates:destinationRoadRoute||[],steps:destinationStepsRef.current,guidance:liveRouteGuidance,speed:liveSpeedKmh,speedLimit:roadSpeedContext?.speedLimitKmh,updatedAt:Date.now()}));
-  },[destination,navigationPosition,currentPosition,latestPoint,destinationRoadRoute,liveRouteGuidance,liveSpeedKmh,roadSpeedContext]);
+    const coordinates=destinationRoadRoute||[];
+    const stride=Math.max(1,Math.ceil(coordinates.length/3000));
+    const bounded=coordinates.filter((_,index)=>index%stride===0||index===coordinates.length-1);
+    travelNative?.updateCarState(JSON.stringify({active:focused&&!!destination,destination:destination?.name,position,coordinates:bounded,routeVersion:destinationRoadRoute?.length?coordinates.length+coordinates[0]![0]+coordinates[coordinates.length-1]![1]:0,guidance:liveRouteGuidance,speed:liveSpeedKmh,speedLimit:roadSpeedContext?.speedLimitKmh,updatedAt:Date.now()}));
+  },[focused,destination,navigationPosition,currentPosition,latestPoint,destinationRoadRoute,liveRouteGuidance,liveSpeedKmh,roadSpeedContext]);
   const visibleStories = mapStories.filter(story => story.id !== 'story-welcome');
   const error = dataError || actionError;
   const compactNavigationTools = Boolean(destination) && r.height - topInset - 8 - navigationTopHeight - bottomControlsInset - navigationBottomHeight < 172;

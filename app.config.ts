@@ -1,10 +1,11 @@
 import type {ConfigContext, ExpoConfig} from 'expo/config';
-import {existsSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 
 export default ({config}: ConfigContext): ExpoConfig => {
   const firebaseFile = './GoogleService-Info.plist';
   const schemes = Array.isArray(config.scheme) ? config.scheme : [config.scheme || 'mymap'];
-  const googleScheme = process.env.GOOGLE_IOS_REVERSED_CLIENT_ID?.trim();
+  const googleScheme = process.env.GOOGLE_IOS_REVERSED_CLIENT_ID?.trim() || (existsSync(firebaseFile)
+    ? readFileSync(firebaseFile, 'utf8').match(/<key>REVERSED_CLIENT_ID<\/key>\s*<string>([^<]+)<\/string>/)?.[1] : undefined);
   return {
     ...config,
     name: config.name || 'MyMap', slug: config.slug || 'mymap', platforms: ['ios'],
@@ -25,11 +26,12 @@ export default ({config}: ConfigContext): ExpoConfig => {
     },
     plugins: [
       ...(config.plugins || []),
+      ['./plugins/with-ios-companions.cjs', {carPlay: process.env.MYMAP_ENABLE_CARPLAY === 'true', watch: process.env.MYMAP_ENABLE_WATCH === 'true'}],
       ...(process.env.EXPO_PUBLIC_ENABLE_IOS_WIDGET === 'true' ? [
         ['expo-widgets', {groupIdentifier:'group.com.pnhl.vibecoding', widgets:[{
           name:'MyMapMomentWidget', displayName:'MyMap · Khoảnh khắc', description:'Ảnh và kỷ niệm bạn chủ động chọn.', ios:{supportedFamilies:['systemSmall','systemMedium']},
         }]}]] as NonNullable<ExpoConfig['plugins']> : []),
-      '@react-native-firebase/app', '@react-native-firebase/auth', 'expo-apple-authentication',
+      ['@react-native-firebase/app', {ios:{disableSPM:true}}], '@react-native-firebase/auth', 'expo-apple-authentication',
       ['expo-build-properties', {ios: {deploymentTarget: '16.4', useFrameworks: 'static'}}],
       ['react-native-google-mobile-ads', {
         iosAppId: process.env.EXPO_PUBLIC_ADMOB_IOS_APP_ID || 'ca-app-pub-3940256099942544~1458002511',

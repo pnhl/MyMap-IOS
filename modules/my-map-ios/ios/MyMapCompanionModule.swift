@@ -1,0 +1,89 @@
+import ExpoModulesCore
+import UIKit
+import WatchConnectivity
+import UserNotifications
+
+final class MyMapCompanionStore: NSObject, WCSessionDelegate {
+  static let shared = MyMapCompanionStore()
+  var onSOS: (() -> Void)?
+  var onStop: (() -> Void)?
+  var state: [String: Any] = [:]
+  var watchEnabled = false
+  var carEnabled = false
+  func configure(watch: Bool, car: Bool) {
+    watchEnabled = watch; carEnabled = car
+    if WCSession.isSupported() {
+      let session = WCSession.default
+      session.delegate = self
+      if session.activationState == .activated { publishWatch() } else if watch { session.activate() }
+    }
+    if !car { state = [:] }
+    NotificationCenter.default.post(name: .myMapNavigationChanged, object: nil)
+  }
+  func update(_ json: String) throws {
+    guard watchEnabled || carEnabled else { state = [:]; return }
+    guard json.utf8.count < 512000, let data = json.data(using: .utf8),
+      let value = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { return }
+    state = value
+    publishWatch()
+    NotificationCenter.default.post(name: .myMapNavigationChanged, object: nil)
+  }
+  private func publishWatch() {
+    guard WCSession.isSupported(), WCSession.default.activationState == .activated else { return }
+    let guidance = state["guidance"] as? [String: Any] ?? [:]
+    let meters = max(0, guidance["distanceMeters"] as? Double ?? 0)
+    let speed = max(0, state["speed"] as? Double ?? 0)
+    let context: [String: Any] = ["enabled":watchEnabled,"instruction":watchEnabled ? String((guidance["instruction"] as? String ?? "Chưa có tuyến đường").prefix(160)) : "",
+      "distance":watchEnabled ? (meters >= 1000 ? String(format:"%.1f km",meters/1000) : "\(Int(meters)) m") : "",
+      "speed":watchEnabled ? "\(Int(speed.rounded())) km/h" : "","updatedAt":Date().timeIntervalSince1970*1000]
+    try? WCSession.default.updateApplicationContext(context)
+  }
+  func session(_ session: WCSession, activationDidCompleteWith activationState: WCSessionActivationState, error: Error?) {
+    DispatchQueue.main.async { self.publishWatch() }
+  }
+  func sessionDidBecomeInactive(_ session: WCSession) {}
+  func sessionDidDeactivate(_ session: WCSession) { session.activate() }
+  func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
+    DispatchQueue.main.async {
+      guard self.watchEnabled, message["action"] as? String == "trigger_sos" else { replyHandler(["accepted":false]); return }
+      if UIApplication.shared.applicationState == .active { self.onSOS?() }
+      else {
+        let content = UNMutableNotificationContent()
+        content.title = "Yêu cầu SOS từ Apple Watch"; content.body = "Mở MyMap để xác nhận và chọn cách trợ giúp."
+        content.sound = .default; content.userInfo = ["url":"mymap://sos"]
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier:"mymap-watch-sos",content:content,trigger:nil))
+      }
+      replyHandler(["accepted":true])
+    }
+  }
+}
+extension Notification.Name { static let myMapNavigationChanged = Notification.Name("MyMapNavigationChanged") }
+
+public final class MyMapCompanionModule: Module {
+  public func definition() -> ModuleDefinition {
+    Name("MyMapCompanion")
+    Events("onWatchSOS", "onCarStop")
+    OnCreate {
+      MyMapCompanionStore.shared.onSOS = { [weak self] in self?.sendEvent("onWatchSOS", [:]) }
+      MyMapCompanionStore.shared.onStop = { [weak self] in self?.sendEvent("onCarStop", [:]) }
+    }
+    AsyncFunction("configure") { (watch: Bool, car: Bool) in MyMapCompanionStore.shared.configure(watch:watch,car:car) }.runOnQueue(.main)
+    AsyncFunction("updateNavigation") { (json: String) in try MyMapCompanionStore.shared.update(json) }.runOnQueue(.main)
+    AsyncFunction("status") { () -> [String: Any] in
+      let session = WCSession.default
+      return ["watchSupported":WCSession.isSupported(),"paired":session.isPaired,"installed":session.isWatchAppInstalled,
+        "reachable":session.isReachable,"carPlayConfigured":Bundle.main.object(forInfoDictionaryKey:"UIApplicationSceneManifest") != nil]
+    }.runOnQueue(.main)
+    AsyncFunction("geofenceHaptic") { (name: String) -> Bool in
+      guard MyMapCompanionStore.shared.watchEnabled, WCSession.isSupported(), WCSession.default.isReachable else { return false }
+      WCSession.default.sendMessage(["type":"geofence_vibrate","region":String(name.prefix(100))],replyHandler:nil)
+      return true
+    }.runOnQueue(.main)
+    OnDestroy {
+      DispatchQueue.main.async {
+        MyMapCompanionStore.shared.configure(watch:false,car:false)
+        MyMapCompanionStore.shared.onSOS = nil; MyMapCompanionStore.shared.onStop = nil
+      }
+    }
+  }
+}

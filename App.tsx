@@ -17,12 +17,17 @@ import {startMomentSync} from './src/services/moments';
 import {initializeMusicPlayback} from './src/services/musicPlayback';
 import {AppLock} from './src/components/AppLock';
 import {startSharedSync} from './src/services/sharedSync';
-const momentLinking:LinkingOptions<RootStackParamList>={prefixes:['mymap://'],config:{initialRouteName:'Tabs',screens:{Moments:'moments',MomentDetail:'moment/:momentId',MomentCamera:'camera'}}};
+import {createNavigationContainerRef} from '@react-navigation/native';
+import {startIOSCompanions} from './src/services/iosCompanions';
+const navigationRef=createNavigationContainerRef<RootStackParamList>();
+let pendingSOS=false;
+function openWatchSOS(){if(navigationRef.isReady())navigationRef.navigate('SOS');else pendingSOS=true;}
+const momentLinking:LinkingOptions<RootStackParamList>={prefixes:['mymap://'],config:{initialRouteName:'Tabs',screens:{Moments:'moments',MomentDetail:'moment/:momentId',MomentCamera:'camera',SOS:'sos'}}};
 
 function ThemedApp() {
  const {theme}=useAppTheme();
  const navigationTheme=useMemo(()=>({...DarkTheme,colors:{...DarkTheme.colors,primary:theme.colors.primary,background:theme.colors.bg,card:theme.colors.glassStrong,text:theme.colors.text,border:theme.colors.border,notification:theme.colors.danger}}),[theme]);
- return <SafeAreaProvider><View style={{flex:1}} onTouchStart={()=>travelNative?.userInteraction()}><StatusBar barStyle="light-content" translucent backgroundColor="transparent"/><NavigationContainer theme={navigationTheme} linking={momentLinking}><AppNavigator/></NavigationContainer><SafetyMonitor/><AppLock/></View></SafeAreaProvider>;
+ return <SafeAreaProvider><View style={{flex:1}} onTouchStart={()=>travelNative?.userInteraction()}><StatusBar barStyle="light-content" translucent backgroundColor="transparent"/><NavigationContainer ref={navigationRef} onReady={()=>{if(pendingSOS){pendingSOS=false;openWatchSOS();}}} theme={navigationTheme} linking={momentLinking}><AppNavigator/></NavigationContainer><SafetyMonitor/><AppLock/></View></SafeAreaProvider>;
 }
 
 function BrandLaunchScreen() {
@@ -49,6 +54,7 @@ export default function App(){
  useEffect(()=>{void initializeMusicPlayback();},[]);
  useEffect(()=>startMomentSync(),[]);
  useEffect(()=>startSharedSync(),[]);
+ useEffect(()=>startIOSCompanions(openWatchSOS),[]);
  useEffect(()=>{
   if(AppState.currentState==='active')void restoreTracking();
   const subscription=AppState.addEventListener('change',state=>{if(state==='active')void restoreTracking();});

@@ -1,4 +1,5 @@
 import {requireOptionalNativeModule} from 'expo';
+import {publishCompanionNavigation} from './iosCompanions';
 type SafetyState = {enabled:boolean;pendingAt:number;deadline:number;heightMeters:number;kind:string;emergencyNumber:string};
 type TravelIOS = {
  configureSafety(enabled:boolean,number:string):Promise<boolean>;
@@ -21,7 +22,7 @@ export const travelNative = ios ? {
  userInteraction: ()=>{void ios.userInteraction().catch(()=>{});},
  dismissIncident: ()=>{void ios.dismissIncident().catch(()=>{});},
  playWarning: ()=>{void ios.playWarning().catch(()=>{});},
- updateCarState: (_json:string)=>{}, // Requires approved CarPlay entitlement.
+ updateCarState: publishCompanionNavigation,
  getSpotubeInstallation: async()=>({installed:false}),
  openSpotube: async()=>false,
  getAudioDocumentInfo: async(_uri:string):Promise<{name:string|null;mimeType:string|null}|null>=>null,
