@@ -88,4 +88,6 @@ jobs:
           path: |
             watch-build.log
             build/watch/Release-watchsimulator/MyMapWatch.app
+            ios/MyMap.xcodeproj/project.pbxproj
+            ios/MyMap/AppDelegate.swift
           retention-days: 7

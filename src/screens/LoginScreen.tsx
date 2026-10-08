@@ -13,6 +13,7 @@ import {
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import Constants from 'expo-constants';
 import {
   type AuthResult,
   confirmPhoneCode,
@@ -302,7 +303,7 @@ export default function LoginScreen() {
           onError={setErrorMsg}
         />}
 
-        {Platform.OS === 'ios' && (
+        {Platform.OS === 'ios' && Constants.expoConfig?.extra?.appleServicesEnabled === true && (
           <View style={[s.appleButtonWrap, socialLoading !== null && socialLoading !== 'apple' && s.btnDisabled]}>
             <AppleAuthentication.AppleAuthenticationButton
               buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
@@ -319,7 +320,7 @@ export default function LoginScreen() {
           </View>
         )}
 
-        {Platform.OS === 'ios' && (
+        {Platform.OS === 'ios' && Constants.expoConfig?.extra?.appleServicesEnabled === true && (
           <TouchableOpacity
             style={[s.socialBtn, s.gameCenterBtn, socialLoading !== null && socialLoading !== 'gamecenter' && s.btnDisabled]}
             onPress={() => void handleNativeProvider('gamecenter')}

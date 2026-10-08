@@ -30,7 +30,7 @@ module.exports=(config,{carPlay=false,watch=false}={})=>{
       TARGETED_DEVICE_FAMILY:'4',SWIFT_VERSION:'5.0',GENERATE_INFOPLIST_FILE:'YES',
       INFOPLIST_KEY_WKApplication:'YES',INFOPLIST_KEY_WKCompanionAppBundleIdentifier:`"${config.ios.bundleIdentifier}"`,
       INFOPLIST_KEY_CFBundleDisplayName:'MyMap',MARKETING_VERSION:config.version,CURRENT_PROJECT_VERSION:config.ios.buildNumber,
-      SKIP_INSTALL:'YES',ASSETCATALOG_COMPILER_APPICON_NAME:'',INFOPLIST_FILE:'',
+      SKIP_INSTALL:'YES',ASSETCATALOG_COMPILER_APPICON_NAME:'""',INFOPLIST_FILE:'""',
     });
     const group=project.addPbxGroup(['MyMapWatchApp.swift'],name,name);
     project.addToPbxGroup(group.uuid,project.getFirstProject().firstProject.mainGroup);

@@ -10,10 +10,13 @@ public final class MyMapGameCenterModule: Module {
     Name("MyMapGameCenter")
 
     AsyncFunction("isAvailable") {
-      true
+      Bundle.main.object(forInfoDictionaryKey:"MyMapAppleServicesEnabled") as? Bool == true
     }
 
     AsyncFunction("signIn") { (promise: Promise) in
+      guard Bundle.main.object(forInfoDictionaryKey:"MyMapAppleServicesEnabled") as? Bool == true else {
+        promise.reject("ERR_GAME_CENTER_PROVISIONING", "Bản sideload chưa được cấp quyền Game Center của Apple."); return
+      }
       guard self.pendingPromise == nil else {
         promise.reject("ERR_GAME_CENTER_IN_PROGRESS", "Một yêu cầu Game Center khác đang được xử lý.")
         return

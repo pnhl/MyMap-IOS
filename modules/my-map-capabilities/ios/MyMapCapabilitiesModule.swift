@@ -25,6 +25,10 @@ public final class MyMapCapabilitiesModule: Module {
     guard privateScreen,cover==nil,let window=UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).flatMap({ $0.windows }).first(where:{ $0.isKeyWindow }) else { return }
     let shield=UIView(frame:window.bounds);shield.backgroundColor=UIColor(red:0.06,green:0.09,blue:0.15,alpha:1);shield.autoresizingMask=[.flexibleWidth,.flexibleHeight];window.addSubview(shield);cover=shield
   }
+  private func refreshCover() {
+    if privateScreen && (UIScreen.main.isCaptured || UIApplication.shared.applicationState != .active) { coverPreview() }
+    else { cover?.removeFromSuperview();cover=nil }
+  }
   private func key(_ account: String, create: () throws -> Data) throws -> Data {
     keyLock.lock(); defer { keyLock.unlock() }
     let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword,
@@ -78,8 +82,10 @@ public final class MyMapCapabilitiesModule: Module {
       if !enabled { self.cover?.removeFromSuperview();self.cover=nil }
       if self.observers.isEmpty {
         self.observers.append(NotificationCenter.default.addObserver(forName:UIApplication.willResignActiveNotification,object:nil,queue:.main){ [weak self] _ in self?.coverPreview() })
-        self.observers.append(NotificationCenter.default.addObserver(forName:UIApplication.didBecomeActiveNotification,object:nil,queue:.main){ [weak self] _ in self?.cover?.removeFromSuperview();self?.cover=nil })
+        self.observers.append(NotificationCenter.default.addObserver(forName:UIApplication.didBecomeActiveNotification,object:nil,queue:.main){ [weak self] _ in self?.refreshCover() })
+        self.observers.append(NotificationCenter.default.addObserver(forName:UIScreen.capturedDidChangeNotification,object:nil,queue:.main){ [weak self] _ in self?.refreshCover() })
       }
+      self.refreshCover()
     }.runOnQueue(.main)
     AsyncFunction("analyzePhoto") { (uri:String) -> [String:Any] in try PhotoAnalyzer.analyze(uri) }.runOnQueue(DispatchQueue.global(qos: .userInitiated))
     AsyncFunction("authenticate") { (reason: String, promise: Promise) in
