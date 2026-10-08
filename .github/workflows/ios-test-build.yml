@@ -1,0 +1,56 @@
+name: iOS test IPA
+on:
+  workflow_dispatch:
+    inputs:
+      widgets:
+        description: Include WidgetKit (App Group signing needed when installing)
+        type: boolean
+        default: false
+      simulator:
+        description: Also build and smoke test iOS Simulator
+        type: boolean
+        default: true
+permissions:
+  contents: read
+jobs:
+  device:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    env:
+      FIREBASE_IOS_PLIST_BASE64: ${{ secrets.FIREBASE_IOS_PLIST_BASE64 }}
+      MYMAP_IOS_ENV: ${{ secrets.MYMAP_IOS_ENV }}
+      EXPO_PUBLIC_ENABLE_IOS_WIDGET: ${{ inputs.widgets && 'true' || 'false' }}
+      RNLLAMA_SKIP_DOWNLOAD: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Restore private app configuration
+        run: |
+          test -n "$FIREBASE_IOS_PLIST_BASE64" || { echo 'FIREBASE_IOS_PLIST_BASE64 is required'; exit 1; }
+          printf '%s' "$FIREBASE_IOS_PLIST_BASE64" | base64 --decode > GoogleService-Info.plist
+          printf '%s' "$MYMAP_IOS_ENV" > .env.local
+      - run: npm run prepare:ios
+      - name: Build unsigned iPhone IPA
+        run: bash scripts/build-ios-test.sh iphoneos
+      - name: Build Simulator and run launch smoke test
+        if: inputs.simulator
+        run: |
+          bash scripts/build-ios-test.sh iphonesimulator
+          bash scripts/smoke-ios-simulator.sh
+      - name: Upload test builds
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyMap-iOS-test-${{ github.run_number }}
+          path: dist/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Upload native build diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: iOS-build-diagnostics-${{ github.run_number }}
+          path: build/*.log
+          retention-days: 7
