@@ -24,7 +24,7 @@ public final class MyMapCarPlaySceneDelegate: NSObject, CPTemplateApplicationSce
     let template = CPMapTemplate(); self.template = template
     let center = CPMapButton { [weak self] _ in self?.render() }
     center.image = UIImage(systemName:"location.fill")
-    let stop = CPMapButton { _ in MyMapCompanionStore.shared.onStop?() }
+    let stop = CPMapButton { _ in MyMapCompanionStore.shared.stopNavigation() }
     stop.image = UIImage(systemName:"stop.circle")
     template.mapButtons = [center, stop]
     interfaceController.setRootTemplate(template, animated:false, completion:nil)

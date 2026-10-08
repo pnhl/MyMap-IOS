@@ -27,6 +27,8 @@ jobs:
       MYMAP_ENABLE_WATCH: ${{ inputs.companions && 'true' || 'false' }}
       MYMAP_ENABLE_CARPLAY: 'false'
       RNLLAMA_SKIP_DOWNLOAD: '1'
+      MYMAP_SKIP_DEPENDENCY_INSTALL: 'true'
+      MYMAP_SKIP_POD_INSTALL: 'true'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,19 +40,53 @@ jobs:
           test -n "$FIREBASE_IOS_PLIST_BASE64" || { echo 'FIREBASE_IOS_PLIST_BASE64 is required'; exit 1; }
           printf '%s' "$FIREBASE_IOS_PLIST_BASE64" | base64 --decode > GoogleService-Info.plist
           printf '%s' "$MYMAP_IOS_ENV" > .env.local
+      - run: npm ci --ignore-scripts
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/llama.rn/ios/rnllama.xcframework
+          key: llama-ios-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
       - run: npm run prepare:ios
+      - uses: actions/cache@v4
+        id: pods
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: ios-pods-${{ runner.arch }}-${{ hashFiles('package-lock.json', 'ios/Podfile', 'ios/Podfile.properties.json') }}
+      - run: cd ios && pod install
+      - uses: actions/cache/save@v4
+        if: steps.pods.outputs.cache-hit != 'true'
+        with:
+          path: |
+            ios/Pods
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: ${{ steps.pods.outputs.cache-primary-key }}
       - name: Build unsigned iPhone IPA
         run: bash scripts/build-ios-test.sh iphoneos
+      - name: Upload iPhone IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: MyMap-iOS-IPA-${{ github.run_number }}
+          path: |
+            dist/MyMap-iOS-unsigned.ipa
+            dist/MyMap-iOS-unsigned.sha256
+          if-no-files-found: error
+          retention-days: 14
       - name: Build Simulator and run launch smoke test
         if: inputs.simulator
         run: |
           bash scripts/build-ios-test.sh iphonesimulator
           bash scripts/smoke-ios-simulator.sh
-      - name: Upload test builds
+      - name: Upload Simulator test builds
+        if: inputs.simulator && success()
         uses: actions/upload-artifact@v4
         with:
-          name: MyMap-iOS-test-${{ github.run_number }}
-          path: dist/
+          name: MyMap-iOS-Simulator-${{ github.run_number }}
+          path: |
+            dist/MyMap-iOS-Simulator.zip
+            dist/MyMap-iOS-Simulator.png
           if-no-files-found: error
           retention-days: 14
       - name: Upload native build diagnostics

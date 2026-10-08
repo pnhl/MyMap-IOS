@@ -15,6 +15,9 @@ final class MyMapCompanionStore: NSObject, WCSessionDelegate, CLLocationManagerD
   private let location = CLLocationManager()
   private var nextStep = 0
   private var routeVersion: Double = -1
+  private var phoneForeground: Bool {
+    UIApplication.shared.connectedScenes.contains { $0.session.role == .windowApplication && $0.activationState == .foregroundActive }
+  }
   override init() { super.init(); location.delegate = self }
   private func reconcileLocation() {
     guard carConnected, carEnabled, state["active"] as? Bool == true,
@@ -32,9 +35,15 @@ final class MyMapCompanionStore: NSObject, WCSessionDelegate, CLLocationManagerD
       session.delegate = self
       if session.activationState == .activated { publishWatch() } else if watch { session.activate() }
     }
-    if !car { state = [:] }
+    if !car && !watch { state = [:] }
     reconcileLocation()
     NotificationCenter.default.post(name: .myMapNavigationChanged, object: nil)
+  }
+  func stopNavigation() {
+    state = ["active":false,"coordinates":[],"updatedAt":Date().timeIntervalSince1970*1000]
+    reconcileLocation(); publishWatch()
+    NotificationCenter.default.post(name:.myMapNavigationChanged,object:nil)
+    onStop?()
   }
   func update(_ json: String) throws {
     guard watchEnabled || carEnabled else { state = [:]; return }
@@ -56,7 +65,7 @@ final class MyMapCompanionStore: NSObject, WCSessionDelegate, CLLocationManagerD
       fix.horizontalAccuracy >= 0, fix.horizontalAccuracy < 100, abs(fix.timestamp.timeIntervalSinceNow) < 15 else { return }
     state["position"] = ["latitude":fix.coordinate.latitude,"longitude":fix.coordinate.longitude]
     state["speed"] = max(0, fix.speed*3.6); state["updatedAt"] = Date().timeIntervalSince1970*1000
-    if UIApplication.shared.applicationState != .active, let steps = state["steps"] as? [[String: Any]], !steps.isEmpty {
+    if !phoneForeground, let steps = state["steps"] as? [[String: Any]], !steps.isEmpty {
       func distance(_ step: [String: Any]) -> Double? {
         guard let point = step["position"] as? [Double], point.count >= 2 else { return nil }
         return fix.distance(from:CLLocation(latitude:point[0],longitude:point[1]))
@@ -89,14 +98,20 @@ final class MyMapCompanionStore: NSObject, WCSessionDelegate, CLLocationManagerD
   func session(_ session: WCSession, didReceiveMessage message: [String: Any], replyHandler: @escaping ([String: Any]) -> Void) {
     DispatchQueue.main.async {
       guard self.watchEnabled, message["action"] as? String == "trigger_sos" else { replyHandler(["accepted":false]); return }
-      if UIApplication.shared.applicationState == .active { self.onSOS?() }
+      if self.phoneForeground { self.onSOS?(); replyHandler(["accepted":true]) }
       else {
-        let content = UNMutableNotificationContent()
-        content.title = "Yêu cầu SOS từ Apple Watch"; content.body = "Mở MyMap để xác nhận và chọn cách trợ giúp."
-        content.sound = .default; content.userInfo = ["url":"mymap://sos"]
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier:"mymap-watch-sos",content:content,trigger:nil))
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+          guard settings.authorizationStatus == .authorized || settings.authorizationStatus == .provisional else {
+            replyHandler(["accepted":false,"message":"Mở MyMap trên iPhone. Quyền thông báo chưa bật."]); return
+          }
+          let content = UNMutableNotificationContent()
+          content.title = "Yêu cầu SOS từ Apple Watch"; content.body = "Mở MyMap để xác nhận và chọn cách trợ giúp."
+          content.sound = .default; content.userInfo = ["url":"mymap://sos"]
+          UNUserNotificationCenter.current().add(UNNotificationRequest(identifier:"mymap-watch-sos",content:content,trigger:nil)) { error in
+            replyHandler(["accepted":error == nil,"message":error == nil ? "Xác nhận SOS trên iPhone":"Chưa gửi được. Mở MyMap trên iPhone."])
+          }
+        }
       }
-      replyHandler(["accepted":true])
     }
   }
 }

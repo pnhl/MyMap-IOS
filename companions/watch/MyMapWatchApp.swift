@@ -41,7 +41,7 @@ final class CompanionSession: NSObject, ObservableObject, WCSessionDelegate {
   func requestSOS() {
     guard WCSession.default.isReachable else { notice = "Mở MyMap trên iPhone rồi thử lại"; return }
     WCSession.default.sendMessage(["action":"trigger_sos"], replyHandler: { reply in
-      DispatchQueue.main.async { self.notice = reply["accepted"] as? Bool == true ? "Xác nhận SOS trên iPhone" : "Bật Apple Watch trong MyMap" }
+      DispatchQueue.main.async { self.notice = reply["message"] as? String ?? (reply["accepted"] as? Bool == true ? "Xác nhận SOS trên iPhone" : "Bật Apple Watch trong MyMap") }
     }, errorHandler: { _ in DispatchQueue.main.async { self.notice = "Chưa gửi được. Thử lại trên iPhone" } })
   }
 }

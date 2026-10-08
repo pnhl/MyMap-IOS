@@ -1,12 +1,31 @@
-const {withInfoPlist,withEntitlementsPlist,withXcodeProject}=require('expo/config-plugins');
+const {withInfoPlist,withEntitlementsPlist,withXcodeProject,withAppDelegate}=require('expo/config-plugins');
 const fs=require('node:fs'),path=require('node:path');
 module.exports=(config,{carPlay=false,watch=false}={})=>{
+  config=withInfoPlist(config,c=>{
+    const existing=c.modResults.UIApplicationSceneManifest||{};
+    c.modResults.UIApplicationSceneManifest={...existing,UIApplicationSupportsMultipleScenes:carPlay,
+      UISceneConfigurations:{...(existing.UISceneConfigurations||{}),UIWindowSceneSessionRoleApplication:[{
+        UISceneConfigurationName:'MyMap',UISceneDelegateClassName:'EXExpoAppSceneDelegate',
+      }]}};
+    return c;
+  });
+  config=withAppDelegate(config,c=>{
+    if(c.modResults.language!=='swift')throw Error('MyMap requires the Expo Swift AppDelegate template.');
+    let source=c.modResults.contents;
+    source=source.replace('class AppDelegate: ExpoAppDelegate {','class AppDelegate: ExpoAppDelegate, ExpoReactNativeFactoryProvider {');
+    const startup=/factory\.startReactNative\(\s*withModuleName: "main",\s*in: window,\s*launchOptions: launchOptions\)/;
+    if(startup.test(source))source=source.replace(startup,'// MyMap: ExpoAppSceneDelegate starts React Native in the phone window.');
+    else if(!source.includes('MyMap: ExpoAppSceneDelegate'))throw Error('Review the updated Expo AppDelegate startup template.');
+    c.modResults.contents=source;return c;
+  });
   if(carPlay){
     config=withEntitlementsPlist(config,c=>{c.modResults['com.apple.developer.carplay-maps']=true;return c;});
     config=withInfoPlist(config,c=>{
+      const existing=c.modResults.UIApplicationSceneManifest||{};
       c.modResults.UIApplicationSceneManifest={
+        ...existing,
         UIApplicationSupportsMultipleScenes:true,
-        UISceneConfigurations:{CPTemplateApplicationSceneSessionRoleApplication:[{
+        UISceneConfigurations:{...(existing.UISceneConfigurations||{}),CPTemplateApplicationSceneSessionRoleApplication:[{
           UISceneClassName:'CPTemplateApplicationScene',UISceneConfigurationName:'MyMap CarPlay',
           UISceneDelegateClassName:'MyMapCarPlaySceneDelegate',
         }]},

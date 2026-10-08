@@ -7,7 +7,7 @@ case "$sdk" in iphoneos) destination='generic/platform=iOS';; iphonesimulator) d
 xcodebuild -version
 xcodebuild -workspace ios/MyMap.xcworkspace -scheme MyMap -configuration Release \
   -destination "$destination" -derivedDataPath "build/$sdk" \
-  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build > "build/$sdk.log" 2>&1 || {
+  CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO build 2>&1 | tee "build/$sdk.log" | awk '/^SwiftCompile|^CompileC |^Ld |error:|\*\* BUILD/ {print substr($0,1,220); fflush()}' || {
     tail -180 "build/$sdk.log"; exit 1;
   }
 app="build/$sdk/Build/Products/Release-$sdk/MyMap.app"

@@ -63,8 +63,8 @@ npm run build:ios:simulator
 | AppWidget Android | WidgetKit/SwiftUI thông qua Expo Widgets; mặc định tắt, bật bằng flag và build lại |
 | Google Play Services / `google-services.json` | Firebase iOS plist và Google Sign-In iOS; Apple/Game Center có module riêng |
 | Amazon APS, Play Integrity, Doze exemption, APK signing | Loại khỏi bản iOS; không giả lập kết quả thành công |
-| Android Auto | Loại khỏi bản iOS. CarPlay chưa triển khai; cần quyền navigation CarPlay từ Apple và target/scene riêng |
-| Wear OS | Loại SDK Wear OS; giữ cầu nối WatchConnectivity. Chưa có ứng dụng companion watchOS trong repo |
+| Android Auto | CarPlay native scene/MapKit và chỉ dẫn từ tuyến MyMap; cần entitlement navigation được Apple chấp thuận |
+| Wear OS | Apple Watch companion SwiftUI và WatchConnectivity: chỉ dẫn, tốc độ, rung vùng địa điểm, yêu cầu SOS |
 
 Giữ lại phần React Native cho bản đồ, lựa chọn tuyến đường, giao thông, các provider hiện có, kỷ niệm, cộng đồng, tin nhắn, LiveKit, nhạc cục bộ/radio, dữ liệu ngoại tuyến và cài đặt. Việc chuyển nền tảng không tự hoàn thiện các tính năng nghiệp vụ còn thiếu của bản Android.
 
@@ -73,7 +73,7 @@ Giữ lại phần React Native cho bản đồ, lựa chọn tuyến đường,
 - Widget mặc định không được tạo trong bản build. Để bật, đặt `EXPO_PUBLIC_ENABLE_IOS_WIDGET=true`, chạy lại prebuild và cấp App Group `group.com.pnhl.vibecoding` cho app/extension trên Apple Developer. Chọn ảnh trong MyMap rồi tự thêm widget từ màn hình chính. Không có API tự ghim widget như Android.
 - Widget không giữ Firebase token hoặc LiveKit secret. Ảnh xem trước được sao chép vào App Group sau khi người dùng chọn; đổi tài khoản xóa dữ liệu widget. Ảnh bạn bè có timeline tự ẩn sau 15 phút khi chưa được cập nhật; không có tác vụ tải ảnh bạn bè độc lập khi app bị đóng.
 - Ghi vị trí nền cần quyền Always và còn phụ thuộc iOS. Force quit không đảm bảo tiếp tục ghi. Theo dõi va chạm trong màn hình cài đặt chỉ chạy khi app mở; không có Android foreground service hay tự gọi số khẩn cấp.
-- Lớp che dữ liệu bảo vệ ảnh xem trước khi chuyển app; iOS không cung cấp cơ chế chặn mọi screenshot giống `FLAG_SECURE`.
+- Lớp che dữ liệu bảo vệ ảnh xem trước khi chuyển app và khi đang quay màn hình nếu khóa app bật; iOS không cung cấp cơ chế chặn mọi screenshot giống `FLAG_SECURE`.
 - Apple Intelligence phụ thuộc thiết bị, phiên bản iOS, trạng thái mô hình và ngôn ngữ. Khi không khả dụng, người dùng có thể chọn GGUF. Không gửi câu hỏi lên dịch vụ AI đám mây.
 - Local Spotube không được mở bằng package Android trên iOS. Nhạc cục bộ/radio của MyMap là trình phát chính; giao thức Spotube dùng chung còn trong mã nhưng cần kiểm thử iOS riêng nếu bật lại tích hợp đó.
 
@@ -81,6 +81,6 @@ Giữ lại phần React Native cho bản đồ, lựa chọn tuyến đường,
 
 Trên Windows đã kiểm tra TypeScript, kiểm thử nghiệp vụ dùng chung và điều phối GPS iOS, cấu hình Expo và autolinking của bốn module Swift. Đây không phải xác nhận app đã biên dịch hoặc chạy trên iPhone.
 
-GitHub Actions chạy kiểm thử JS/TS và parse cú pháp Swift trên Mac khi push. Muốn build Simulator đầy đủ: đặt repository secret `FIREBASE_IOS_PLIST_BASE64`, chạy workflow **iOS source checks** với `build_simulator=true`. Trước phát hành cần kiểm thử quyền vị trí nền, camera/micro, đăng nhập, LiveKit, xuất video, AI, widget và vòng đời app trên iPhone/iPad thật.
+GitHub Actions chạy kiểm thử JS/TS và parse cú pháp Swift trên Mac khi push. Workflow **iOS test IPA** build IPA cho thiết bị chưa ký, Simulator, kiểm tra khởi động và target Watch. Cấu hình Firebase iOS và client environment được lưu riêng trong repository secrets. Xem [hướng dẫn bản test và trạng thái các phần iOS](docs/IOS_TEST_BUILD.md) để tải/cài, chọn build capability và kiểm thử thiết bị thật. Apple/Game Center, App Group và CarPlay không tự được cấp quyền khi ký IPA bằng tài khoản miễn phí.
 
 Tài liệu nền tảng: [Expo Widgets](https://docs.expo.dev/versions/v57.0.0/sdk/widgets/), [React Native Firebase](https://rnfirebase.io/), [Apple Speech](https://developer.apple.com/documentation/speech/sfspeechrecognitionrequest/requiresondevicerecognition).
